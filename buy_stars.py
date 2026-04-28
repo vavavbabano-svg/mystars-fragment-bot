@@ -1,29 +1,27 @@
 import os
-import sys
 import asyncio
 import argparse
-from pyfragment import FragmentClient
+from fragment_api_lib.client import FragmentAPIClient
+from fragment_api_lib.models import *
 
 async def buy_stars(username: str, stars: int):
     seed = os.environ.get("TON_SEED")
-    api_key = os.environ.get("TONAPI_KEY", "")  # берём ключ из переменных окружения
-    cookies_str = os.environ.get("FRAGMENT_COOKIES", "")
+    fragment_cookies = os.environ.get("FRAGMENT_COOKIES", "")
     
     if not seed:
         raise Exception("TON_SEED not configured")
     
-    # Парсим cookies в словарь (если есть)
-    cookies = {}
-    if cookies_str:
-        for item in cookies_str.split('; '):
-            if '=' in item:
-                key, value = item.split('=', 1)
-                cookies[key] = value
+    client = FragmentAPIClient()
     
-    # Передаём api_key в FragmentClient
-    async with FragmentClient(seed=seed, api_key=api_key, cookies=cookies) as client:
-        result = await client.purchase_stars(username, amount=stars)
-        return result
+    # Покупка звёзд (с KYC, через cookies)
+    result = client.buy_stars(
+        username=username,
+        amount=stars,
+        show_sender=False,
+        fragment_cookies=fragment_cookies,
+        seed=seed
+    )
+    return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
