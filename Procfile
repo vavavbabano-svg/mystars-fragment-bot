@@ -1,1 +1,1 @@
-worker: python buy_stars.py --username test --stars 1
+web: python api/index.py
