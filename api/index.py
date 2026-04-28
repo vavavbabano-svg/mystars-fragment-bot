@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -34,8 +35,20 @@ def buy():
             username = data['data'].get('username')
             stars = data['data'].get('stars')
         
+        # Способ 4: парсим order_id (формат: username_stars_123)
         if not username or not stars:
+            order_id = data.get('order_id', '')
+            match = re.search(r'([a-zA-Z0-9_]+)_stars_(\d+)', order_id)
+            if match:
+                username = '@' + match.group(1)
+                stars = int(match.group(2))
+                print(f"Extracted from order_id: username={username}, stars={stars}")
+        
+        if not username or not stars:
+            print("ERROR: Missing username or stars")
             return jsonify({"error": "Missing username or stars", "received": data}), 400
+        
+        print(f"OK: username={username}, stars={stars}")
         
         # Здесь будет покупка звёзд (пока заглушка)
         # TODO: запустить buy_stars.py
