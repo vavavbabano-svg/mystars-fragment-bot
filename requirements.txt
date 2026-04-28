@@ -1,3 +1,2 @@
-pyfragment>=0.1.0
-aiohttp>=3.8.0
+fragment-api-lib>=1.0.1
 flask>=2.0.0
