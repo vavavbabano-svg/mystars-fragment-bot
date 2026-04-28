@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import subprocess
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -50,10 +51,18 @@ def buy():
         
         print(f"OK: username={username}, stars={stars}")
         
-        # Здесь будет покупка звёзд (пока заглушка)
-        # TODO: запустить buy_stars.py
+        # ========== ПОКУПКА ЗВЁЗД ЧЕРЕЗ FRAGMENT ==========
+        result = subprocess.run(
+            ['python', 'buy_stars.py', '--username', username, '--stars', str(stars)],
+            capture_output=True, text=True
+        )
         
-        return jsonify({"status": "ok", "username": username, "stars": stars}), 200
+        if result.returncode == 0:
+            print(f"Stars purchased: {result.stdout}")
+            return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
+        else:
+            print(f"Error: {result.stderr}")
+            return jsonify({"error": result.stderr}), 500
         
     except Exception as e:
         print("Exception:", str(e))
