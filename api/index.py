@@ -1,29 +1,21 @@
-from flask import Flask, request, jsonify
-import subprocess
+import os
 import json
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+port = int(os.environ.get("PORT", 8080))
 
 @app.route('/buy', methods=['POST'])
 def buy():
-    data = request.json
-    username = data.get('username')
-    stars = data.get('stars')
-    
-    if not username or not stars:
-        return jsonify({"error": "Missing username or stars"}), 400
-    
-    # Запускаем скрипт покупки
-    result = subprocess.run(
-        ['python', 'buy_stars.py', f'--username={username}', f'--stars={stars}'],
-        capture_output=True, text=True
-    )
-    
-    output = json.loads(result.stdout)
-    if output.get('success'):
-        return jsonify({"status": "ok", "tx": output.get('tx_id')})
-    else:
-        return jsonify({"error": output.get('error')}), 500
+    try:
+        data = request.get_json(force=True)
+        return jsonify({"status": "ok", "received": data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"status": "alive"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=port)
