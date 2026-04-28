@@ -19,3 +19,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     asyncio.run(buy_stars(args.username, args.stars))
+    cookies_str = os.environ.get("FRAGMENT_COOKIES")
+print(f"Cookies loaded: {cookies_str[:50]}...")  # покажет первые 50 символов
