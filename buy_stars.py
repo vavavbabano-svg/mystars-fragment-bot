@@ -11,12 +11,10 @@ port = int(os.environ.get("PORT", 8080))
 VPN_BOT_TOKEN = '8776699039:AAEwnKj7juy4mmZWtSrKoJKVFovyX8D4y1Q'
 
 def send_vpn_key(chat_id):
-    """Отправляет запрос на создание VPN-ключа и возвращает ссылку"""
     try:
         res = requests.post('http://194.87.134.111:3000/create-key', timeout=10)
         data = res.json()
         if data.get('success') and data.get('link'):
-            # Отправляем ключ пользователю через бота
             requests.post(
                 f'https://api.telegram.org/bot{VPN_BOT_TOKEN}/sendMessage',
                 json={
@@ -32,9 +30,6 @@ def send_vpn_key(chat_id):
 @app.route('/buy', methods=['POST'])
 def buy():
     try:
-        print("Headers:", dict(request.headers))
-        print("Raw data:", request.get_data(as_text=True))
-        
         data = request.get_json()
         print("Parsed JSON:", data)
         
@@ -44,27 +39,42 @@ def buy():
         if 'username' in data:
             username = data['username']
             stars = data.get('stars')
-        elif 'custom_fields' in data and data['custom_fields']:
-            custom = json.loads(data['custom_fields']) if isinstance(data['custom_fields'], str) else data['custom_fields']
-            username = custom.get('username')
-            stars = custom.get('stars')
-        elif 'data' in data:
-            username = data['data'].get('username')
-            stars = data['data'].get('stars')
         
-        if not username or not stars:
+        if 'custom_fields' in data and data['custom_fields']:
+            custom = json.loads(data['custom_fields']) if isinstance(data['custom_fields'], str) else data['custom_fields']
+            if not username:
+                username = custom.get('username')
+            if stars is None:
+                stars = custom.get('stars')
+        
+        if 'data' in data:
+            if not username:
+                username = data['data'].get('username')
+            if stars is None:
+                stars = data['data'].get('stars')
+        
+        # Из order_id
+        if not username or stars is None:
             order_id = data.get('order_id', '')
             match = re.search(r'([a-zA-Z0-9_]+)_stars_(\d+)', order_id)
             if match:
                 username = '@' + match.group(1)
                 stars = int(match.group(2))
-                print(f"Extracted from order_id: username={username}, stars={stars}")
         
-        if not username or not stars:
+        if not username or stars is None:
             print("ERROR: Missing username or stars")
-            return jsonify({"error": "Missing username or stars", "received": data}), 400
+            return jsonify({"error": "Missing username or stars"}), 400
         
-        print(f"OK: username={username}, stars={stars}")
+        # Преобразуем stars в int
+        stars = int(stars) if stars else 0
+        
+        # VPN: если звёзд 0 — не покупаем, сразу выдаём ключ
+        if stars == 0:
+            custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
+            chat_id = custom.get('chat_id')
+            if chat_id:
+                send_vpn_key(chat_id)
+            return jsonify({"status": "ok", "message": "VPN key sent"}), 200
         
         # Покупаем звёзды
         result = subprocess.run(
@@ -74,20 +84,6 @@ def buy():
         
         if result.returncode == 0:
             print(f"Stars purchased: {result.stdout}")
-            
-            # Дополнительно: если это VPN платёж — отправляем ключ
-            if 'VPN' in str(data.get('description', '')) or 'vpn' in str(data.get('order_id', '')).lower():
-                # Получаем chat_id из custom_fields
-                chat_id = None
-                try:
-                    custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
-                    chat_id = custom.get('chat_id')
-                except:
-                    pass
-                
-                if chat_id:
-                    send_vpn_key(chat_id)
-            
             return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
         else:
             print(f"Error: {result.stderr}")
