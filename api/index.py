@@ -1,3 +1,5 @@
+# api/index.py
+
 import os
 import json
 import re
@@ -49,6 +51,7 @@ def buy():
             print(f"Stars purchased: {result.stdout}")
             return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
         else:
+            print(f"Error: {result.stderr}")
             return jsonify({"error": result.stderr}), 500
         
     except Exception as e:
