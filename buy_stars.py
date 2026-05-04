@@ -7,7 +7,7 @@ from fragment_api_lib.client import FragmentAPIClient
 
 async def buy_stars(username: str, stars: int):
     seed = os.environ.get("TON_SEED")
-    fragment_cookies = os.environ.get("FRAGMENT_COOKIES", "")
+fragment_cookies = os.environ.get("FRAGMENT_COOKIE", "")
     
     if not seed:
         print("ERROR: TON_SEED not configured")
