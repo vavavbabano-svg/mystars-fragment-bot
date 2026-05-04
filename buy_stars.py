@@ -1,9 +1,8 @@
 import os
 import sys
-import json
 import asyncio
 import argparse
-import httpx
+from fragment_api_lib.client import FragmentAPIClient
 
 async def buy_stars(username: str, stars: int):
     seed = os.environ.get("TON_SEED")
@@ -13,32 +12,16 @@ async def buy_stars(username: str, stars: int):
         print("ERROR: TON_SEED not configured")
         sys.exit(1)
     
-    clean_username = username.replace('@', '')
+    client = FragmentAPIClient()
     
-    headers = {
-        "Cookie": fragment_cookies,
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0"
-    }
-    
-    async with httpx.AsyncClient(timeout=30) as client:
-        info_url = f"https://fragment.com/api?hash={clean_username}"
-        resp = await client.get(info_url, headers=headers)
-        print(f"Info: {resp.status_code}")
-        
-        buy_url = "https://fragment.com/api/buyStars"
-        payload = {
-            "username": clean_username,
-            "amount": stars
-        }
-        resp = await client.post(buy_url, json=payload, headers=headers)
-        print(f"Buy: {resp.status_code} {resp.text}")
-        
-        if resp.status_code == 200:
-            return True
-        else:
-            print(f"Error: {resp.text}")
-            return False
+    result = client.buy_stars(
+        username=username,
+        amount=stars,
+        show_sender=False,
+        fragment_cookies=fragment_cookies,
+        seed=seed
+    )
+    return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -47,5 +30,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     result = asyncio.run(buy_stars(args.username, args.stars))
-    if not result:
-        sys.exit(1)
+    print(f"Purchase result: {result}")
