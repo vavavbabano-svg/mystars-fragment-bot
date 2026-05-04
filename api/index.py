@@ -11,6 +11,7 @@ port = int(os.environ.get("PORT", 8080))
 def buy():
     try:
         data = request.get_json()
+        print("Parsed JSON:", data)
         
         username = None
         stars = None
@@ -36,14 +37,17 @@ def buy():
             capture_output=True, text=True
         )
         
+        print(f"STDOUT: {result.stdout}")
+        print(f"STDERR: {result.stderr}")
+        print(f"EXIT CODE: {result.returncode}")
+        
         if result.returncode == 0:
-            print(f"Stars purchased: {result.stdout}")
             return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
         else:
-            print(f"Error: {result.stderr}")
-            return jsonify({"error": result.stderr}), 500
+            return jsonify({"error": result.stderr or "Unknown error"}), 500
         
     except Exception as e:
+        print("Exception:", str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
