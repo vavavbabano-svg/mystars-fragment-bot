@@ -5,6 +5,10 @@ import subprocess
 import requests
 from flask import Flask, request, jsonify
 
+# Убиваем старый процесс перед запуском
+os.system("pkill -f 'flask' 2>/dev/null || true")
+os.system("pkill -f 'gunicorn' 2>/dev/null || true")
+
 app = Flask(__name__)
 port = int(os.environ.get("PORT", 8080))
 
@@ -66,7 +70,6 @@ def buy():
         
         stars = int(stars) if stars else 0
         
-        # VPN: если звёзд 0 — не покупаем, сразу выдаём ключ
         if stars == 0:
             custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
             chat_id = custom.get('chat_id')
@@ -74,7 +77,6 @@ def buy():
                 send_vpn_key(chat_id)
             return jsonify({"status": "ok", "message": "VPN key sent"}), 200
         
-        # Покупаем звёзды
         result = subprocess.run(
             ['python', 'buy_stars.py', '--username', username, '--stars', str(stars)],
             capture_output=True, text=True
