@@ -15,7 +15,7 @@ def send_vpn_key(chat_id):
         print("VPN_BOT_TOKEN not set")
         return
     try:
-        res = requests.post('http://194.87.134.111:3000/create-key', timeout=10)
+        res = requests.post('http://212.113.119.90:3000/create-key', timeout=10)
         data = res.json()
         if data.get('success') and data.get('link'):
             requests.post(
@@ -69,7 +69,6 @@ def buy():
         
         stars = int(stars) if stars else 0
         
-        # VPN: если звёзд 0 — выдаём ключ
         if stars == 0:
             custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
             chat_id = custom.get('chat_id')
@@ -77,7 +76,6 @@ def buy():
                 send_vpn_key(chat_id)
             return jsonify({"status": "ok", "message": "VPN key sent"}), 200
         
-        # Покупаем звёзды
         result = subprocess.run(
             ['python', 'buy_stars.py', '--username', username, '--stars', str(stars)],
             capture_output=True, text=True
