@@ -16,6 +16,7 @@ def buy():
         username = None
         stars = None
         
+        # Пробуем достать из разных мест
         if 'username' in data:
             username = data['username']
             stars = data.get('stars')
@@ -27,24 +28,38 @@ def buy():
             if stars is None:
                 stars = custom.get('stars')
         
+        if 'data' in data:
+            if not username:
+                username = data['data'].get('username')
+            if stars is None:
+                stars = data['data'].get('stars')
+        
+        # Из order_id (запасной вариант)
         if not username or stars is None:
+            order_id = data.get('order_id', '')
+            match = re.search(r'([a-zA-Z0-9_]+)_stars_(\d+)', order_id)
+            if match:
+                username = '@' + match.group(1)
+                stars = int(match.group(2))
+        
+        if not username or stars is None:
+            print("ERROR: Missing username or stars")
             return jsonify({"error": "Missing username or stars"}), 400
         
         stars = int(stars) if stars else 0
         
+        # Вызываем внешний скрипт для покупки звёзд
         result = subprocess.run(
             ['python', 'buy_stars.py', '--username', username, '--stars', str(stars)],
             capture_output=True, text=True
         )
         
-        print(f"STDOUT: {result.stdout}")
-        print(f"STDERR: {result.stderr}")
-        print(f"EXIT CODE: {result.returncode}")
-        
         if result.returncode == 0:
+            print(f"Stars purchased: {result.stdout}")
             return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
         else:
-            return jsonify({"error": result.stderr or "Unknown error"}), 500
+            print(f"Error: {result.stderr}")
+            return jsonify({"error": result.stderr}), 500
         
     except Exception as e:
         print("Exception:", str(e))
