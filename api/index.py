@@ -9,6 +9,7 @@ app = Flask(__name__)
 port = int(os.environ.get("PORT", 8080))
 
 VPN_BOT_TOKEN = os.environ.get("VPN_BOT_TOKEN", "")
+SUB_URL = "https://vpn.fastmystars.ru:8443/sub.php"
 
 def send_vpn_key(chat_id):
     if not VPN_BOT_TOKEN:
@@ -17,12 +18,18 @@ def send_vpn_key(chat_id):
     try:
         res = requests.post('http://212.113.119.90:3000/create-key', timeout=10)
         data = res.json()
-        if data.get('success') and data.get('link'):
+        if data.get('success'):
+            # Отправляем и отдельный ключ, и ссылку на подписку
+            msg = '🔒 *MyStars VPN*\n\n'
+            if data.get('link'):
+                msg += '⚡ Быстрый ключ:\n`' + data['link'] + '`\n\n'
+            msg += '📋 Или добавьте подписку:\n`' + SUB_URL + '`\n\nСкопируйте и вставьте в HAPP VPN.'
+            
             requests.post(
                 f'https://api.telegram.org/bot{VPN_BOT_TOKEN}/sendMessage',
                 json={
                     'chat_id': chat_id,
-                    'text': '🔒 *Ваш VPN-ключ:*\n\n`' + data['link'] + '`\n\nСкопируйте и вставьте в HAPP VPN.',
+                    'text': msg,
                     'parse_mode': 'Markdown'
                 }
             )
