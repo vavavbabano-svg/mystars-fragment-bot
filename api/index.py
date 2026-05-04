@@ -9,31 +9,30 @@ app = Flask(__name__)
 port = int(os.environ.get("PORT", 8080))
 
 VPN_BOT_TOKEN = os.environ.get("VPN_BOT_TOKEN", "")
-SUB_URL = "https://vpn.fastmystars.ru:8443/sub.php"
+VPN_API = "http://212.113.119.90:3000"
 
-def send_vpn_key(chat_id):
+def send_vpn_key(chat_id, vpn_type="xray"):
     if not VPN_BOT_TOKEN:
         print("VPN_BOT_TOKEN not set")
         return
     try:
-        res = requests.post('http://212.113.119.90:3000/create-key', timeout=10)
+        endpoint = "/create-key" if vpn_type == "xray" else "/create-wg"
+        res = requests.post(f"{VPN_API}{endpoint}", timeout=10)
         data = res.json()
-        if data.get('success'):
-            # Отправляем и отдельный ключ, и ссылку на подписку
-            msg = '🔒 *MyStars VPN*\n\n'
-            if data.get('link'):
-                msg += '⚡ Быстрый ключ:\n`' + data['link'] + '`\n\n'
-            msg += '📋 Или добавьте подписку:\n`' + SUB_URL + '`\n\nСкопируйте и вставьте в HAPP VPN.'
+        
+        if data.get("success"):
+            if vpn_type == "wireguard":
+                config = data.get("config", "")
+                text = "🎮 *Игровой VPN (WireGuard)*\n\n📱 Скачайте WireGuard из App Store\n\nКонфиг:\n```\n" + config + "\n```\n\nСкопируйте и импортируйте в WireGuard."
+            else:
+                link = data.get("link", "")
+                text = "🔒 *Ваш VPN-ключ:*\n\n`" + link + "`\n\nСкопируйте и вставьте в HAPP VPN."
             
             requests.post(
                 f'https://api.telegram.org/bot{VPN_BOT_TOKEN}/sendMessage',
-                json={
-                    'chat_id': chat_id,
-                    'text': msg,
-                    'parse_mode': 'Markdown'
-                }
+                json={'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
             )
-            print(f"VPN key sent to {chat_id}")
+            print(f"VPN key sent to {chat_id} ({vpn_type})")
     except Exception as e:
         print(f"VPN error: {e}")
 
@@ -45,6 +44,7 @@ def buy():
         
         username = None
         stars = None
+        vpn_type = "xray"
         
         if 'username' in data:
             username = data['username']
@@ -56,6 +56,7 @@ def buy():
                 username = custom.get('username')
             if stars is None:
                 stars = custom.get('stars')
+            vpn_type = custom.get('vpn_type', 'xray')
         
         if 'data' in data:
             if not username:
@@ -80,7 +81,7 @@ def buy():
             custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
             chat_id = custom.get('chat_id')
             if chat_id:
-                send_vpn_key(chat_id)
+                send_vpn_key(chat_id, vpn_type)
             return jsonify({"status": "ok", "message": "VPN key sent"}), 200
         
         result = subprocess.run(
