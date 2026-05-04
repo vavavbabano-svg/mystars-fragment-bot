@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 import argparse
+import http.cookies
 from fragment_api_lib.client import FragmentAPIClient
 
 async def buy_stars(username: str, stars: int):
@@ -12,9 +13,15 @@ async def buy_stars(username: str, stars: int):
         print("ERROR: TON_SEED not configured")
         sys.exit(1)
     
+    # Преобразуем куки в Header String если они ещё не в том формате
+    if not fragment_cookies.startswith("Cookie:"):
+        # Убираем лишние пробелы и переносы
+        fragment_cookies = fragment_cookies.strip().replace('\n', '')
+        # Форматируем как Header String
+        fragment_cookies = f"Cookie: {fragment_cookies}"
+    
     client = FragmentAPIClient()
     
-    # Основной метод покупки (с поддержкой KYC)
     result = client.buy_stars(
         username=username,
         amount=stars,
