@@ -1,6 +1,3 @@
-# api/index.py
-
-import os
 import json
 import re
 import subprocess
@@ -13,7 +10,6 @@ port = int(os.environ.get("PORT", 8080))
 def buy():
     try:
         data = request.get_json()
-        print("Parsed JSON:", data)
         
         username = None
         stars = None
@@ -30,14 +26,6 @@ def buy():
                 stars = custom.get('stars')
         
         if not username or stars is None:
-            order_id = data.get('order_id', '')
-            match = re.search(r'([a-zA-Z0-9_]+)_stars_(\d+)', order_id)
-            if match:
-                username = '@' + match.group(1)
-                stars = int(match.group(2))
-        
-        if not username or stars is None:
-            print("ERROR: Missing username or stars")
             return jsonify({"error": "Missing username or stars"}), 400
         
         stars = int(stars) if stars else 0
@@ -55,7 +43,6 @@ def buy():
             return jsonify({"error": result.stderr}), 500
         
     except Exception as e:
-        print("Exception:", str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
