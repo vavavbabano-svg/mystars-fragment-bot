@@ -2,30 +2,10 @@ import os
 import json
 import re
 import subprocess
-import requests
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 port = int(os.environ.get("PORT", 8080))
-
-VPN_BOT_TOKEN = '8776699039:AAEwnKj7juy4mmZWtSrKoJKVFovyX8D4y1Q'
-
-def send_vpn_key(chat_id):
-    try:
-        res = requests.post('http://194.87.134.111:3000/create-key', timeout=10)
-        data = res.json()
-        if data.get('success') and data.get('link'):
-            requests.post(
-                f'https://api.telegram.org/bot{VPN_BOT_TOKEN}/sendMessage',
-                json={
-                    'chat_id': chat_id,
-                    'text': '🔒 *Ваш VPN-ключ:*\n\n`' + data['link'] + '`\n\nСкопируйте и вставьте в HAPP VPN.',
-                    'parse_mode': 'Markdown'
-                }
-            )
-            print(f"VPN key sent to {chat_id}")
-    except Exception as e:
-        print(f"VPN error: {e}")
 
 @app.route('/buy', methods=['POST'])
 def buy():
@@ -47,13 +27,6 @@ def buy():
             if stars is None:
                 stars = custom.get('stars')
         
-        if 'data' in data:
-            if not username:
-                username = data['data'].get('username')
-            if stars is None:
-                stars = data['data'].get('stars')
-        
-        # Из order_id
         if not username or stars is None:
             order_id = data.get('order_id', '')
             match = re.search(r'([a-zA-Z0-9_]+)_stars_(\d+)', order_id)
@@ -65,18 +38,8 @@ def buy():
             print("ERROR: Missing username or stars")
             return jsonify({"error": "Missing username or stars"}), 400
         
-        # Преобразуем stars в int
         stars = int(stars) if stars else 0
         
-        # VPN: если звёзд 0 — не покупаем, сразу выдаём ключ
-        if stars == 0:
-            custom = json.loads(data.get('custom_fields', '{}')) if isinstance(data.get('custom_fields'), str) else data.get('custom_fields', {})
-            chat_id = custom.get('chat_id')
-            if chat_id:
-                send_vpn_key(chat_id)
-            return jsonify({"status": "ok", "message": "VPN key sent"}), 200
-        
-        # Покупаем звёзды
         result = subprocess.run(
             ['python', 'buy_stars.py', '--username', username, '--stars', str(stars)],
             capture_output=True, text=True
