@@ -1,8 +1,8 @@
 import os
+import sys
 import json
 import requests
 import argparse
-import time
 
 FRAGMENT_COOKIE = os.environ.get('FRAGMENT_COOKIE', '')
 
@@ -19,18 +19,10 @@ def buy_stars(username, stars):
     
     clean_username = username.replace('@', '')
     
-    # Шаг 1: Получаем информацию о пользователе
-    url = f'https://fragment.com/api?hash={clean_username}'
-    resp = requests.get(url, headers=headers)
-    
-    if resp.status_code != 200:
-        print(f"Error getting user info: {resp.status_code}")
-        return False
-    
-    # Шаг 2: Покупаем звёзды
-    buy_url = 'https://fragment.com/api/buyStars'
+    # Покупаем звёзды через Fragment API
+    buy_url = f'https://fragment.com/api?hash={clean_username}'
     data = {
-        'username': clean_username,
+        'type': 'stars',
         'amount': stars
     }
     
@@ -38,10 +30,14 @@ def buy_stars(username, stars):
     
     if resp.status_code == 200:
         result = resp.json()
-        print(f"Stars purchased: {json.dumps(result)}")
-        return True
+        if result.get('ok') or result.get('success'):
+            print(f"Stars purchased: {json.dumps(result)}")
+            return True
+        else:
+            print(f"Fragment error: {json.dumps(result)}")
+            return False
     else:
-        print(f"Error buying stars: {resp.status_code} {resp.text}")
+        print(f"HTTP Error: {resp.status_code} {resp.text}")
         return False
 
 if __name__ == '__main__':
