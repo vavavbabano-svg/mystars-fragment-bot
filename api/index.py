@@ -1,4 +1,5 @@
-import os
+import os as _os
+import sys
 import json
 import re
 import subprocess
@@ -40,12 +41,14 @@ def send_vpn_key(chat_id, vpn_type="xray"):
 def buy():
     try:
         data = request.get_json()
-                # Проверка что buy_stars.py существует
-        import os as _os
+        print("Parsed JSON:", data)
+        
+        # Отладка файлов
         print("Current dir:", _os.getcwd())
         print("Files:", _os.listdir("."))
         print("buy_stars.py exists:", _os.path.exists("buy_stars.py"))
-        print("Parsed JSON:", data)
+        print("api/buy_stars.py exists:", _os.path.exists("api/buy_stars.py"))
+        sys.stdout.flush()
         
         username = None
         stars = None
@@ -98,6 +101,7 @@ def buy():
         print(f"STDOUT: {result.stdout}")
         print(f"STDERR: {result.stderr}")
         print(f"EXIT CODE: {result.returncode}")
+        sys.stdout.flush()
         
         if result.returncode == 0:
             return jsonify({"status": "ok", "message": f"Stars sent to {username}"}), 200
@@ -108,6 +112,7 @@ def buy():
         import traceback
         print("Exception:", str(e))
         traceback.print_exc()
+        sys.stdout.flush()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
