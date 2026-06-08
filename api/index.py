@@ -1,4 +1,4 @@
-import os as _os
+import os
 import sys
 import json
 import re
@@ -43,11 +43,10 @@ def buy():
         data = request.get_json()
         print("Parsed JSON:", data)
         
-        # Отладка файлов
-        print("Current dir:", _os.getcwd())
-        print("Files:", _os.listdir("."))
-        print("buy_stars.py exists:", _os.path.exists("buy_stars.py"))
-        print("api/buy_stars.py exists:", _os.path.exists("api/buy_stars.py"))
+        print("Current dir:", os.getcwd())
+        print("Files:", os.listdir("."))
+        print("buy_stars.py exists:", os.path.exists("buy_stars.py"))
+        print("api/buy_stars.py exists:", os.path.exists("api/buy_stars.py"))
         sys.stdout.flush()
         
         username = None
