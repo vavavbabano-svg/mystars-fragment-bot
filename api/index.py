@@ -40,6 +40,11 @@ def send_vpn_key(chat_id, vpn_type="xray"):
 def buy():
     try:
         data = request.get_json()
+                # Проверка что buy_stars.py существует
+        import os as _os
+        print("Current dir:", _os.getcwd())
+        print("Files:", _os.listdir("."))
+        print("buy_stars.py exists:", _os.path.exists("buy_stars.py"))
         print("Parsed JSON:", data)
         
         username = None
