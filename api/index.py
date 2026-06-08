@@ -97,9 +97,11 @@ def buy():
             return jsonify({"error": result.stderr}), 500
         
     except Exception as e:
+        import traceback
         print("Exception:", str(e))
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
+        
 @app.route('/')
 def home():
     return jsonify({"status": "alive"})
